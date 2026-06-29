@@ -79,7 +79,8 @@ export function ProductDialog({
         onClick={onClose}
       />
 
-      <div className="relative z-10 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-card">
+      {/* 🛠️ CAMBIO AQUÍ: Se cambió 'overflow-hidden' por 'overflow-y-auto' */}
+      <div className="relative z-10 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-y-auto rounded-3xl bg-card">
         <button
           onClick={onClose}
           className="absolute right-3 top-3 z-20"
