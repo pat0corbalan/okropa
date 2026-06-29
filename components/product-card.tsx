@@ -19,7 +19,9 @@ export function ProductCard({
         className="relative aspect-square overflow-hidden bg-muted"
       >
         <img
-          src={product.image_url || "/placeholder.svg"}
+          src={
+            product.variants?.[0]?.image_url ?? "/placeholder.svg"
+          }
           alt={product.name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />

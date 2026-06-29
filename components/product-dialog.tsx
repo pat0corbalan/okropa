@@ -13,38 +13,59 @@ export function ProductDialog({
   onClose: () => void
 }) {
   const { addItem } = useCart()
-  const [size, setSize] = useState<string>("")
-  const [color, setColor] = useState<string>("")
+
+  const [size, setSize] = useState("")
+  const [color, setColor] = useState("")
   const [quantity, setQuantity] = useState(1)
+  const [variantIndex, setVariantIndex] = useState(0)
 
-  // Reinicia la selección cada vez que se abre un producto distinto.
-  useEffect(() => {
-    if (product) {
-      setSize(product.sizes[0] ?? "")
-      setColor(product.colors[0] ?? "")
-      setQuantity(1)
-    }
-  }, [product])
+  // 👇 SIEMPRE hooks arriba (regla de oro)
 
-  // Cerrar con tecla Escape.
   useEffect(() => {
     if (!product) return
+
+    setSize(product.sizes[0] ?? "")
+    setVariantIndex(0)
+    setColor(product.variants?.[0]?.color ?? "")
+    setQuantity(1)
+  }, [product])
+
+  useEffect(() => {
+    if (!product) return
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
     }
+
     window.addEventListener("keydown", onKey)
     document.body.style.overflow = "hidden"
+
     return () => {
       window.removeEventListener("keydown", onKey)
       document.body.style.overflow = ""
     }
   }, [product, onClose])
 
-  if (!product) return null
+  // 👇 después de hooks, validación segura
+  if (!product || !product.variants?.length) return null
+
+  const variant =
+    product.variants[variantIndex] ?? product.variants[0]
 
   const handleAdd = () => {
-    addItem(product, size, color, quantity)
+    addItem(
+      product,
+      size,
+      color,
+      variant.image_url,
+      quantity,
+    )
     onClose()
+  }
+
+  const handleColorChange = (colorName: string, index: number) => {
+    setColor(colorName)
+    setVariantIndex(index)
   }
 
   return (
@@ -52,62 +73,56 @@ export function ProductDialog({
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-label={`Opciones de ${product.name}`}
     >
       <div
         className="absolute inset-0 bg-foreground/50 backdrop-blur-sm"
         onClick={onClose}
-        aria-hidden="true"
       />
 
-      <div className="relative z-10 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-card shadow-2xl sm:rounded-3xl">
+      <div className="relative z-10 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-card">
         <button
-          type="button"
           onClick={onClose}
-          aria-label="Cerrar"
-          className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm transition-colors hover:bg-muted"
+          className="absolute right-3 top-3 z-20"
         >
-          <X className="h-5 w-5" />
+          <X />
         </button>
 
-        <div className="grid gap-0 overflow-y-auto sm:grid-cols-2">
-          <div className="aspect-square bg-muted sm:aspect-auto">
+        <div className="grid sm:grid-cols-2">
+          {/* imagen */}
+          <div className="aspect-square bg-muted">
             <img
-              src={product.image_url || "/placeholder.svg"}
+              src={
+                variant?.image_url ??
+                product.variants[0].image_url
+              }
               alt={product.name}
               className="h-full w-full object-cover"
             />
           </div>
 
-          <div className="flex flex-col gap-5 p-5 sm:p-6">
+          <div className="p-6 flex flex-col gap-5">
             <div>
-              <span className="text-xs font-medium uppercase tracking-wide text-primary">
-                {product.category}
-              </span>
-              <h2 className="mt-1 text-balance text-xl font-bold leading-tight sm:text-2xl">
-                {product.name}
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              <h2 className="text-xl font-bold">{product.name}</h2>
+              <p className="text-sm text-muted-foreground">
                 {product.description}
               </p>
-              <p className="mt-3 text-2xl font-bold">
+              <p className="text-2xl font-bold">
                 {formatPrice(product.price)}
               </p>
             </div>
 
-            {/* Talle */}
+            {/* talle */}
             <div>
-              <p className="mb-2 text-sm font-semibold">Talle</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="font-semibold mb-2">Talle</p>
+              <div className="flex gap-2 flex-wrap">
                 {product.sizes.map((s) => (
                   <button
                     key={s}
-                    type="button"
                     onClick={() => setSize(s)}
-                    className={`min-w-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                    className={`border px-3 py-2 rounded-xl ${
                       size === s
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background hover:border-primary"
+                        ? "bg-primary text-white"
+                        : ""
                     }`}
                   >
                     {s}
@@ -116,60 +131,54 @@ export function ProductDialog({
               </div>
             </div>
 
-            {/* Color */}
+            {/* color */}
             <div>
-              <p className="mb-2 text-sm font-semibold">Color</p>
-              <div className="flex flex-wrap gap-2">
-                {product.colors.map((c) => (
+              <p className="font-semibold mb-2">Color</p>
+              <div className="flex gap-2 flex-wrap">
+                {product.variants.map((v, i) => (
                   <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-                      color === c
-                        ? "border-primary bg-accent text-accent-foreground"
-                        : "border-border bg-background hover:border-primary"
+                    key={v.color}
+                    onClick={() =>
+                      handleColorChange(v.color, i)
+                    }
+                    className={`border px-3 py-2 rounded-xl ${
+                      color === v.color
+                        ? "bg-accent"
+                        : ""
                     }`}
                   >
-                    {color === c && <Check className="h-3.5 w-3.5" />}
-                    {c}
+                    {v.color}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Cantidad */}
-            <div>
-              <p className="mb-2 text-sm font-semibold">Cantidad</p>
-              <div className="inline-flex items-center rounded-xl border border-border">
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  aria-label="Restar"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-l-xl transition-colors hover:bg-muted"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="w-12 text-center text-sm font-semibold">
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  aria-label="Sumar"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-r-xl transition-colors hover:bg-muted"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
+            {/* cantidad */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() =>
+                  setQuantity((q) => Math.max(1, q - 1))
+                }
+              >
+                <Minus />
+              </button>
+
+              <span>{quantity}</span>
+
+              <button
+                onClick={() => setQuantity((q) => q + 1)}
+              >
+                <Plus />
+              </button>
             </div>
 
+            {/* add */}
             <button
-              type="button"
               onClick={handleAdd}
-              className="mt-auto inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.02] active:scale-95"
+              className="mt-auto bg-primary text-white py-3 rounded-full"
             >
-              Agregar al carrito · {formatPrice(product.price * quantity)}
+              Agregar ·{" "}
+              {formatPrice(product.price * quantity)}
             </button>
           </div>
         </div>
