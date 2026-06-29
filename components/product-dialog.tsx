@@ -174,12 +174,11 @@ export function ProductDialog({
             </div>
 
             {/* add */}
-            <button
+           <button
               onClick={handleAdd}
-              className="mt-auto bg-primary text-white py-3 rounded-full"
+              className="mt-auto bg-primary text-primary-foreground font-semibold py-3 rounded-full hover:opacity-90 active:scale-[0.98] transition-all"
             >
-              Agregar ·{" "}
-              {formatPrice(product.price * quantity)}
+              Agregar · {formatPrice(product.price * quantity)}
             </button>
           </div>
         </div>
