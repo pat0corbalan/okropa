@@ -6,7 +6,7 @@ export const SHOP_CONFIG = {
   tagline: "Ropa y accesorios seleccionados",
   whatsappNumber: "543856128340",
   currency: "$",
-  logo: "/okcomputer.jpg", 
+  logo: "/okcomputer.png", 
 }
 
 export type Category = "Remeras" | "Pantalones" | "Buzos" |"Accesorios"
