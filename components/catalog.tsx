@@ -15,14 +15,23 @@ export function Catalog() {
   const [showFilters, setShowFilters] = useState(false)
 
   const searchRef = useRef<HTMLDivElement>(null)
+  const mobileFiltersRef = useRef<HTMLDivElement>(null)
   const filters: Filter[] = ["Todos", ...CATEGORIES]
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowFilters(false)
+      // Si se hizo click dentro del buscador, no cerramos nada
+      if (searchRef.current && searchRef.current.contains(e.target as Node)) {
+        return
       }
+      // Si la barra móvil está abierta y se hizo click dentro de ella, tampoco cerramos
+      if (mobileFiltersRef.current && mobileFiltersRef.current.contains(e.target as Node)) {
+        return
+      }
+      // En cualquier otro caso fuera de estos contenedores, ocultamos los filtros
+      setShowFilters(false)
     }
+
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
@@ -45,7 +54,6 @@ export function Catalog() {
     })
   }, [filter, search])
 
-  // Cuenta cuántos artículos pertenecen a cada categoría considerando la búsqueda actual
   const getCategoryCount = (f: Filter) => {
     const q = clean(search)
     return PRODUCTS.filter((p) => {
@@ -80,13 +88,16 @@ export function Catalog() {
           )}
         </div>
 
-        {/* FILTROS (Desktop en línea con el buscador) */}
+        {/* FILTROS DESKTOP */}
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold tracking-tight transition-all active:scale-95 md:hidden"
+            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold tracking-tight transition-all active:scale-95 md:hidden ${
+              showFilters ? "bg-foreground text-background border-foreground" : "bg-card border-border"
+            }`}
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+            <SlidersHorizontal className="h-3.5 w-3.5" />
             Filtros
           </button>
 
@@ -97,6 +108,7 @@ export function Catalog() {
               return (
                 <button
                   key={f}
+                  type="button"
                   onClick={() => setFilter(f)}
                   disabled={count === 0 && !isSelected}
                   className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-medium tracking-tight transition-all duration-200 active:scale-95 ${
@@ -118,21 +130,22 @@ export function Catalog() {
         </div>
       </div>
 
-      {/* FILTROS RESPONSIVE (Mobile desplegable) */}
+      {/* FILTROS RESPONSIVE (Mobile desplegable corregido) */}
       {showFilters && (
-        <div className="mt-4 flex flex-wrap gap-2 border-b border-border/40 pb-4 animate-in fade-in slide-in-from-top-2 duration-200 md:hidden">
+        <div 
+          ref={mobileFiltersRef}
+          className="mt-4 flex flex-wrap gap-2 border-b border-border/40 pb-4 animate-in fade-in slide-in-from-top-2 duration-200 md:hidden"
+        >
           {filters.map((f) => {
             const count = getCategoryCount(f)
             const isSelected = filter === f
             return (
               <button
                 key={f}
-                onClick={() => {
-                  setFilter(f)
-                  setShowFilters(false)
-                }}
+                type="button"
+                onClick={() => setFilter(f)}
                 disabled={count === 0 && !isSelected}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all active:scale-95 ${
                   isSelected
                     ? "border-foreground bg-foreground text-background"
                     : count === 0
@@ -153,6 +166,7 @@ export function Catalog() {
         <p>Mostrando {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}</p>
         {filter !== "Todos" && (
           <button 
+            type="button"
             onClick={() => setFilter("Todos")}
             className="text-foreground font-semibold hover:underline"
           >
@@ -183,6 +197,7 @@ export function Catalog() {
             No encontramos prendas que coincidan con &quot;{search}&quot; dentro de la categoría seleccionada.
           </p>
           <button
+            type="button"
             onClick={() => {
               setFilter("Todos")
               setSearch("")
