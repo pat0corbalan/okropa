@@ -6,6 +6,7 @@ import {
   useMemo,
   useReducer,
   useState,
+  useEffect,
   type ReactNode,
 } from "react"
 import type { Product } from "@/lib/products"
@@ -15,13 +16,14 @@ export interface CartItem {
   id: number
   name: string
   price: number
-  image_url: string // 👈 ahora viene del color seleccionado
+  image_url: string
   size: string
   color: string
   quantity: number
 }
 
 type CartAction =
+  | { type: "INIT"; items: CartItem[] }
   | {
       type: "ADD"
       product: Product
@@ -36,56 +38,72 @@ type CartAction =
   | { type: "CLEAR" }
 
 function reducer(state: CartItem[], action: CartAction): CartItem[] {
+  let newState: CartItem[]
+
   switch (action.type) {
+    case "INIT": {
+      return action.items
+    }
+
     case "ADD": {
       const key = `${action.product.id}-${action.size}-${action.color}`
-
       const existing = state.find((i) => i.key === key)
 
       if (existing) {
-        return state.map((i) =>
+        newState = state.map((i) =>
           i.key === key
             ? { ...i, quantity: i.quantity + action.quantity }
             : i,
         )
+      } else {
+        newState = [
+          ...state,
+          {
+            key,
+            id: action.product.id,
+            name: action.product.name,
+            price: action.product.price,
+            image_url: action.image_url,
+            size: action.size,
+            color: action.color,
+            quantity: action.quantity,
+          },
+        ]
       }
-
-      return [
-        ...state,
-        {
-          key,
-          id: action.product.id,
-          name: action.product.name,
-          price: action.product.price,
-          image_url: action.image_url, // 👈 importante
-          size: action.size,
-          color: action.color,
-          quantity: action.quantity,
-        },
-      ]
+      break
     }
 
     case "INCREMENT":
-      return state.map((i) =>
+      newState = state.map((i) =>
         i.key === action.key ? { ...i, quantity: i.quantity + 1 } : i,
       )
+      break
 
     case "DECREMENT":
-      return state
+      newState = state
         .map((i) =>
           i.key === action.key ? { ...i, quantity: i.quantity - 1 } : i,
         )
         .filter((i) => i.quantity > 0)
+      break
 
     case "REMOVE":
-      return state.filter((i) => i.key !== action.key)
+      newState = state.filter((i) => i.key !== action.key)
+      break
 
     case "CLEAR":
-      return []
+      newState = []
+      break
 
     default:
       return state
   }
+
+  // Guardamos en localStorage solo si estamos ejecutando en el cliente
+  if (typeof window !== "undefined") {
+    localStorage.setItem("spp_cart_items", JSON.stringify(newState))
+  }
+  return newState
 }
 
 interface CartContextValue {
@@ -113,6 +131,18 @@ const CartContext = createContext<CartContextValue | null>(null)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, dispatch] = useReducer(reducer, [])
   const [isOpen, setIsOpen] = useState(false)
+
+  // Carga inicial segura para Next.js App Router (Evita desajustes Server/Client)
+  useEffect(() => {
+    const local = localStorage.getItem("spp_cart_items")
+    if (local) {
+      try {
+        dispatch({ type: "INIT", items: JSON.parse(local) })
+      } catch (e) {
+        console.error("Error al cargar localStorage", e)
+      }
+    }
+  }, [])
 
   const value = useMemo<CartContextValue>(() => {
     const totalItems = items.reduce((acc, i) => acc + i.quantity, 0)

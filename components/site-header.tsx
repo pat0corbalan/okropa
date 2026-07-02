@@ -34,21 +34,21 @@ export function SiteHeader() {
         </div>
 
         {/* CARRITO */}
-        <button
-          type="button"
-          onClick={openCart}
-          aria-label="Abrir carrito"
-          className="relative inline-flex h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-transform hover:scale-105 active:scale-95"
-        >
-          <ShoppingBag className="h-5 w-5" />
-          <span className="hidden sm:inline">Carrito</span>
-
-          {totalItems > 0 && (
-            <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-foreground px-1 text-xs font-bold text-background">
-              {totalItems}
-            </span>
-          )}
-        </button>
+        <button 
+  type="button" 
+  onClick={openCart} // O la función que uses para setear isOpen en true
+  className="relative p-2 text-foreground/80 hover:text-foreground transition-colors"
+  aria-label="Abrir carrito"
+>
+  <ShoppingBag className="h-5 w-5" />
+  
+  {/* Si tenés el contador de items flotante, va acá adentro */}
+  {totalItems > 0 && (
+    <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+      {totalItems}
+    </span>
+  )}
+</button>
 
       </div>
     </header>

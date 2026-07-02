@@ -14,6 +14,7 @@ export type Category = "Remeras" | "Pantalones" | "Buzos" |"Accesorios"
 export interface ProductVariant {
   color: string
   image_url: string
+  color_code?: string;
 }
 
 export interface Product {
