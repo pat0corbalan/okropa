@@ -2,11 +2,11 @@
 // CONFIGURACIÓN DEL SHOWROOM
 // ============================================================================
 export const SHOP_CONFIG = {
-  name: "Justina Showroom",
+  name: "Tienda Showroom",
   tagline: "Ropa y accesorios seleccionados",
   whatsappNumber: "543856128340",
   currency: "$",
-  logo: "/justina.jpg", 
+  logo: "/okcomputer.jpg", 
 }
 
 export type Category = "Remeras" | "Pantalones" | "Buzos" |"Accesorios"
