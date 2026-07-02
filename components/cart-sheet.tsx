@@ -6,10 +6,18 @@ import { Minus, Plus, ShoppingBag, Trash2, X, Copy, Check } from "lucide-react"
 import { useCart, type CartItem } from "@/lib/cart-context"
 import { formatPrice, SHOP_CONFIG } from "@/lib/products"
 
+// Datos bancarios centralizados de forma limpia
+const paymentDetails = {
+  bank: (SHOP_CONFIG as any).bankName || "Mercado Pago",
+  alias: (SHOP_CONFIG as any).alias || "patocorba.mp",
+  cvu: (SHOP_CONFIG as any).cvu || "0000003100029273093344"
+}
+
 function buildWhatsappMessage(items: CartItem[], subtotal: number): string {
   const lines: string[] = []
   lines.push(`*Nuevo pedido — ${SHOP_CONFIG.name}*`)
   lines.push("")
+  
   items.forEach((item, index) => {
     lines.push(`${index + 1}. *${item.name}*`)
     lines.push(`   Talle: ${item.size} | Color: ${item.color}`)
@@ -20,9 +28,18 @@ function buildWhatsappMessage(items: CartItem[], subtotal: number): string {
     )
     lines.push("")
   })
+  
   lines.push(`*TOTAL: ${formatPrice(subtotal)}*`)
   lines.push("")
-  lines.push("¡Gracias! Quedo a la espera para coordinar el pago y la entrega.")
+  lines.push("----------------------------------")
+  lines.push("📌 *Datos para transferencia:*")
+  lines.push(`• *Banco:* ${paymentDetails.bank}`)
+  lines.push(`• *Alias:* ${paymentDetails.alias}`)
+  lines.push(`• *CVU:* ${paymentDetails.cvu}`)
+  lines.push("----------------------------------")
+  lines.push("")
+  lines.push("¡Gracias! Quedo a la espera de este mensaje y el comprobante de transferencia para coordinar la entrega.")
+  
   return lines.join("\n")
 }
 
@@ -66,13 +83,6 @@ export function CartSheet() {
       message,
     )}`
     window.open(url, "_blank")
-  }
-
-  // Datos mockeados de respaldo por si no están en tu SHOP_CONFIG todavía
-  const paymentDetails = {
-    bank: (SHOP_CONFIG as any).bankName || "Mercado Pago",
-    alias: (SHOP_CONFIG as any).alias || "patocorba.mp",
-    cvu: (SHOP_CONFIG as any).cvu || "0000003100029273093344" // Cambiar por el real
   }
 
   return (
@@ -222,7 +232,7 @@ export function CartSheet() {
                       className="p-1 text-muted-foreground/80 hover:text-foreground transition-colors"
                       aria-label="Copiar Alias"
                     >
-                      {copiedType === "alias" ? <Check className="h-3..5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedType === "alias" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
                   </div>
 
@@ -265,7 +275,7 @@ export function CartSheet() {
                   <span>Finalizar pedido por WhatsApp</span>
                 </button>
                 <p className="mt-2 text-center text-[10px] font-medium text-muted-foreground/80 leading-snug">
-                  Transferí o guardá los datos arriba y completá el envío para pasar el comprobante.
+                  Los datos de transferencia también se enviarán adjuntos en tu mensaje de WhatsApp.
                 </p>
               </div>
             </div>
