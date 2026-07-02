@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react"
+import { Minus, Plus, ShoppingBag, Trash2, X, Copy, Check } from "lucide-react"
 import { useCart, type CartItem } from "@/lib/cart-context"
 import { formatPrice, SHOP_CONFIG } from "@/lib/products"
 
@@ -38,6 +38,8 @@ export function CartSheet() {
     removeItem,
   } = useCart()
 
+  const [copiedType, setCopiedType] = useState<"alias" | "cvu" | null>(null)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeCart()
@@ -52,12 +54,25 @@ export function CartSheet() {
     }
   }, [isOpen, closeCart])
 
+  const copyToClipboard = (text: string, type: "alias" | "cvu") => {
+    navigator.clipboard.writeText(text)
+    setCopiedType(type)
+    setTimeout(() => setCopiedType(null), 2000)
+  }
+
   const handleCheckout = () => {
     const message = buildWhatsappMessage(items, subtotal)
     const url = `https://wa.me/${SHOP_CONFIG.whatsappNumber}?text=${encodeURIComponent(
       message,
     )}`
     window.open(url, "_blank")
+  }
+
+  // Datos mockeados de respaldo por si no están en tu SHOP_CONFIG todavía
+  const paymentDetails = {
+    bank: (SHOP_CONFIG as any).bankName || "Mercado Pago",
+    alias: (SHOP_CONFIG as any).alias || "patocorba.mp",
+    cvu: (SHOP_CONFIG as any).cvu || "0000003100029273093344" // Cambiar por el real
   }
 
   return (
@@ -102,7 +117,7 @@ export function CartSheet() {
 
         {/* CONTENIDO PRINCIPAL */}
         {items.length === 0 ? (
-          /* ESTADO VACÍO REGULAR */
+          /* ESTADO VACÍO */
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center max-w-sm mx-auto">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
               <ShoppingBag className="h-5 w-5 text-muted-foreground" />
@@ -125,7 +140,6 @@ export function CartSheet() {
             <ul className="flex-1 divide-y divide-border/40 overflow-y-auto px-5">
               {items.map((item) => (
                 <li key={item.key} className="flex gap-4 py-4 items-center">
-                  {/* IMAGEN DEL ITEM OPTIMIZADA */}
                   <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-xl bg-muted border border-border/20">
                     <Image
                       src={item.image_url || "/placeholder.svg"}
@@ -136,7 +150,6 @@ export function CartSheet() {
                     />
                   </div>
 
-                  {/* DATOS DEL PRODUCTO */}
                   <div className="flex min-w-0 flex-1 flex-col h-20 justify-between py-0.5">
                     <div>
                       <div className="flex items-start justify-between gap-2">
@@ -157,7 +170,6 @@ export function CartSheet() {
                       </p>
                     </div>
 
-                    {/* AJUSTE DE CANTIDADES */}
                     <div className="flex items-center justify-between">
                       <div className="inline-flex items-center rounded-full border border-border bg-background shadow-sm">
                         <button
@@ -189,8 +201,47 @@ export function CartSheet() {
               ))}
             </ul>
 
-            {/* RESUMEN DE COMPRA FIJO INFERIOR */}
-            <div className="border-t border-border/60 bg-card px-5 py-5 space-y-4">
+            {/* RESUMEN DE COMPRA + DATOS DE TRANSFERENCIA */}
+            <div className="border-t border-border/60 bg-card px-5 py-5 space-y-4 shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
+              
+              {/* BLOQUE DE DATOS BANCARIOS PREMIUM */}
+              <div className="rounded-2xl border border-border/60 bg-muted/30 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Datos de Transferencia ({paymentDetails.bank})
+                  </span>
+                </div>
+                
+                <div className="grid gap-1.5 text-xs">
+                  {/* Fila Alias */}
+                  <div className="flex items-center justify-between rounded-lg bg-background border border-border/40 p-2">
+                    <span className="text-muted-foreground font-medium">Alias: <strong className="text-foreground select-all">{paymentDetails.alias}</strong></span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(paymentDetails.alias, "alias")}
+                      className="p-1 text-muted-foreground/80 hover:text-foreground transition-colors"
+                      aria-label="Copiar Alias"
+                    >
+                      {copiedType === "alias" ? <Check className="h-3..5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+
+                  {/* Fila CVU */}
+                  <div className="flex items-center justify-between rounded-lg bg-background border border-border/40 p-2">
+                    <span className="text-muted-foreground font-medium truncate max-w-[280px]">CVU: <strong className="text-foreground select-all tracking-tighter tabular-nums">{paymentDetails.cvu}</strong></span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(paymentDetails.cvu, "cvu")}
+                      className="p-1 text-muted-foreground/80 hover:text-foreground transition-colors"
+                      aria-label="Copiar CVU"
+                    >
+                      {copiedType === "cvu" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* TOTALES */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-medium">
                   <span className="text-muted-foreground">Subtotal</span>
@@ -204,7 +255,8 @@ export function CartSheet() {
                 </div>
               </div>
 
-              <div className="pt-1">
+              {/* ACCIÓN PRINCIPAL */}
+              <div className="pt-0.5">
                 <button
                   type="button"
                   onClick={handleCheckout}
@@ -213,7 +265,7 @@ export function CartSheet() {
                   <span>Finalizar pedido por WhatsApp</span>
                 </button>
                 <p className="mt-2 text-center text-[10px] font-medium text-muted-foreground/80 leading-snug">
-                  Tu mensaje incluirá prendas, talles y el total de forma automática.
+                  Transferí o guardá los datos arriba y completá el envío para pasar el comprobante.
                 </p>
               </div>
             </div>
